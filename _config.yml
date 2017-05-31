@@ -1,6 +1,6 @@
 name: (cumu)lonimbus
-description: At the intersection of cloud technologies, devops, security, and infrastructure as code
-meta_description: "At the intersection of cloud technologies, devops, security, and infrastructure as code."
+description: At the intersection of full-stack cloud technologies, devops, security, and infrastructure as code
+meta_description: "At the intersection of full-stack cloud technologies, devops, security, and infrastructure as code."
 
 markdown: kramdown
 highlighter: pygments
