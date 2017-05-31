@@ -14,3 +14,4 @@ gems: [jekyll-paginate]
 # Details for the RSS feed generator
 url:            'https://www.lonimbus.com'
 author:         'Brad Geesaman'
+bio:            'Automating myself out of a job is my job.'
