@@ -7,3 +7,4 @@ gem "jekyll-srcset", "0.1.3"
 gem 'jekyll-feed'
 gem 'jekyll-paginate'
 gem 'redcarpet'
+gem 'pygments.rb'
