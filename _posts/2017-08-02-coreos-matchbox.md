@@ -252,7 +252,7 @@ Edit the files in ```files``` directory as needed.  Most changes are IP addresse
 Finally, build and run the image:
 
 ~~~sh
-[admin@deploy ~]$ ./buildandrun.sh
+[admin@deploy maas]$ ./buildandrun.sh
 ~~~
 
 #### Running the Tectonic Installer
