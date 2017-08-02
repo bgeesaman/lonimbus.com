@@ -1,20 +1,19 @@
 ---
 layout: post
 title:  "Installing Kubernetes on Baremetal via CoreOS Tectonic with Grub Booting"
-date:   2017-08-02 3:54:07
+date:   2017-08-02 3:54:07 -0500
+permalink: coreos-matchbox-baremetal-grub2
 categories: kubernetes coreos matchbox dnsmasq baremetal
 ---
 
-At work, we use [kube-aws](https://github.com/kubernetes-incubator/kube-aws) to deploy our [Kubernetes](https://kubernetes.io) clusters running on top of [Container Linux](https://coreos.com/os/docs/latest)inside of AWS.  I wanted to be able try new things with Kubernetes in my personal lab without having to rack up huge AWS bills, so that means figuring out a good way to deploy Kubernetes to baremetal in the least painful way.
-
-I wanted to try [Tectonic](https://coreos.com/tectonic/) because it offers a simplified graphical installer, and that means I also need to install [Matchbox](https://coreos.com/matchbox/docs/latest) to support the baremetal provisioning aspects.
+At work, we use [kube-aws](https://github.com/kubernetes-incubator/kube-aws) to deploy our [Kubernetes](https://kubernetes.io) clusters running on top of [Container Linux](https://coreos.com/os/docs/latest) inside of AWS.  I wanted to be able try new things with Kubernetes in my personal lab without having to rack up huge AWS bills, so that means figuring out a good way to deploy Kubernetes to baremetal in the least painful way.  I wanted to try [Tectonic](https://coreos.com/tectonic/) because it offers a simplified graphical installer, and that means I also need to install [Matchbox](https://coreos.com/matchbox/docs/latest) to support the baremetal provisioning aspects.
 
 After reading through the entire [Tectonic Installation Guide](https://coreos.com/tectonic/docs/latest/install/bare-metal/index.html), I realized that it doesn't cover some of the underlying OS provisioning components as they vary per environment.  Since I don't have that infrastructure as I'm starting from scratch, I had to get that going before continuing the installation.  Here's my summary of steps taken (including a custom dnsmasq container) to round out a full working guide.
 
 ## Architecture Overview
 My personal lab is a mixture of PCs, 1U servers, and Mac hardware.  So, for this lab, I'm going to pick one of each to ensure the entire process would work on all my hardware.
 
-As per the installation guide, Tectonic needs three systems at a minimum.  Here are my systems per role:
+As per the [installation guide](https://coreos.com/tectonic/docs/latest/install/bare-metal/index.html), Tectonic needs three systems at a minimum.  Here are my systems per role:
 
 1. Deployment/Provisioning system
  * ```deploy.lab``` -   ```172.22.10.2/24```
@@ -28,7 +27,7 @@ The simplistic network environment is as follows:
 ![3d architecture](/assets/images/arch1.png){:class="img-responsive"}
 
 ## Detailed PXE/Netboot to CoreOS Installation Flow
-The following describes the complete baremetal provisioning process from DHCP request to CoreOS installation.  Configuring the provisioning system to support this workflow is described in the following section.
+The following describes the complete baremetal provisioning process from DHCP request to CoreOS installation.  Configuring the provisioning system to support this workflow is described in the subsequent section.
 
 1. Using IPMI or a keyboard during booting, tell the system to "boot from network".  This will cause the NIC to perform a DHCP request and look for TFTP related settings to boot from.  In my case, it was ```F12``` for my server and holding ```n``` during the boot chime for the Mac.
 2. The DHCP server responds with an IP and subnet along with information pointing to the TFTP server and a filename of what to download/run from that TFTP server.
@@ -147,9 +146,8 @@ initrd  "/assets/coreos/1409.5.0/coreos_production_pxe_image.cpio.gz"
 ## Provisioning Infrastructure Configuration
 There are several components that run on the ```deploy.lab``` system that all need to work in concert for the above process to be successful:
 
-1. DHCP, DNS, TFTP, Grub Network Boot Images and Configuration - This is handled by a [custom container](#TODO) built using ```dnsmasq```.
-2. Matchbox - The [CoreOS provided container](quay.io/coreos/matchbox) that handles the web serving of grub, CoreOS, and Igntition templates provided by the Tectonic installer.
-
+1. Matchbox - The [CoreOS provided container](https://quay.io/coreos/matchbox) that handles the web serving of grub, CoreOS, and Igntition templates provided by the Tectonic installer.
+2. DHCP, DNS, TFTP, Grub Network Boot Images and Configuration - This is handled by a [custom container](https://github.com/bgeesaman/maas) built using ```dnsmasq```.
 
 #### Setting up ```deploy.lab```
 I hand installed [Centos 7.3](https://www.centos.org) with the minimal install and ensured that it had a recent version of [Docker](https://www.docker.com) with SSH key authentication as the ```admin``` user in the ```docker``` group:
@@ -179,7 +177,7 @@ Server:
  Experimental: false
 ~~~
 
-#### Installing and Configuring the Matchbox Container
+#### Installing and Configuring the Matchbox Container on ```deploy.lab```
 The [matchbox documentation](https://coreos.com/matchbox/docs/latest/deployment.html#docker) for running via ```docker``` is a bit misleading as it actually requires several things to be completed before actually running the container. 
 
 First, create the ```matchbox``` user and create/own the ```/var/lib/matchbox``` directory where it will keep all the assets and profiles.
@@ -202,7 +200,7 @@ Download the ```matchbox``` package, verify its signature, and untar it:
 [admin@deploy ~]$ cd matchbox-v0.6.1-linux-amd64
 ~~~
 
-Run a script to grab the version(s) of CoreOS/Container Linux to the current directory and then copy them to the assets directory to be available via ```matchbox``` on port 8080:
+Run a script to grab the version(s) of CoreOS/Container Linux to the current directory and then copy them to the assets directory to be available via ```matchbox``` on port ```8080```:
 
 ~~~sh
 [admin@deploy ~]$ ./scripts/get-coreos stable 1409.5.0 .
@@ -235,12 +233,12 @@ Finally, verify that ```matchbox``` is running and able to serve up your downloa
 </pre>
 ~~~
 
-#### Installing and Configuring the DNSMasq (DNS, DHCP, TFTP, Grub) Container
+#### Installing and Configuring the DNSMasq (DNS, DHCP, TFTP, Grub) Container on ```deploy.lab```
 
-Running dnsmasq in docker #TODO
+It's easiest to grab a copy of the repo and build your own docker image locally.
 
 ~~~sh
-[admin@deploy ~]$ git clone https://
+[admin@deploy ~]$ git clone https://github.com/bgeesaman/maas
 [admin@deploy ~]$ cd maas
 ~~~
 
@@ -261,6 +259,7 @@ Finally, build and run the image:
 With the above in place and a free license from CoreOS for Tectonic, you can now follow the [Tectonic Baremetal with Graphical Installer guide](https://coreos.com/tectonic/docs/latest/install/bare-metal/index.html) having satisfied the pre-requisites--with one exception.
 
  * Grub-specific Gotcha
+ 
    The Tectonic installer will run you through several steps of supplying configuration and will arrive at a point where it instructs you to "power on your systems" that are to be baremetal booted from the network, but it won't work out-of-the-box.  The details are in [this github issue](https://github.com/coreos/tectonic-installer/issues/1317) for what is happening to prevent ```grub``` from working by default.  The good news is that there is a simple workaround.  On the ```deploy.lab``` system, this is the default profile that the Tectonic GUI installer places into your ```/var/lib/matchbox/profiles``` folder:
 
    ~~~sh
