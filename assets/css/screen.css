@@ -178,7 +178,7 @@ body {
     max-height: 100%;
     font-family: "Merriweather", serif;
     letter-spacing: 0.01rem;
-    font-size: 1.8rem;
+    font-size: 1.6rem;
     line-height: 1.75em;
     color: #3A4145;
     -webkit-font-feature-settings: 'kern' 1;
@@ -325,35 +325,35 @@ mark {
 }
 
 code, tt {
-    padding: 1px 3px;
-    font-family: Inconsolata, monospace, sans-serif;
-    font-size: 0.85em;
-    white-space: pre-wrap;
+    padding: 0px;
+    font-family: monospace, sans-serif;
+    font-size: 1em;
+    color: #3A4145;
     border: #E3EDF3 1px solid;
-    background: #F7FAFB;
+    background: #eeeeee;
     border-radius: 2px;
 }
 
 pre {
     -moz-box-sizing: border-box;
     box-sizing: border-box;
-    margin: 0 0 1.75em 0;
+    margin: 0 0 2em 0;
     border: #E3EDF3 1px solid;
     width: 100%;
     padding: 10px;
-    font-family: Inconsolata, monospace, sans-serif;
+    font-family: monospace, sans-serif;
     font-size: 0.9em;
-    white-space: pre;
+    line-height: 1.5em;
     overflow: auto;
-    background: #F7FAFB;
-    border-radius: 3px;
+    background: #161616;
+    border-radius: 2px;
 }
 
 pre code, tt {
-    font-size: inherit;
-    white-space: -moz-pre-wrap;
-    white-space: pre-wrap;
     background: transparent;
+    white-space: pre;
+    background: #161616;
+    color: #d1d1d1;
     border: none;
     padding: 0;
 }
@@ -908,7 +908,7 @@ body:not(.post-template) .post-title {
 }
 
 .post-footer h4 {
-    font-size: 1.8rem;
+    font-size: 1.6rem;
     margin: 0;
 }
 
@@ -962,7 +962,7 @@ body:not(.post-template) .post-title {
 }
 
 .post-footer .share a {
-    font-size: 1.8rem;
+    font-size: 1.6rem;
     display: inline-block;
     margin: 1rem 1.6rem 1.6rem 0;
     color: #BBC7CC;
@@ -1151,7 +1151,7 @@ body:not(.post-template) .post-title {
 }
 
 .author-bio {
-    font-size: 1.8rem;
+    font-size: 1.6rem;
     line-height: 1.5em;
     font-weight: 200;
     color: #50585D;
@@ -1368,7 +1368,7 @@ body:not(.post-template) .post-title {
     }
 
     .page-description {
-        font-size: 1.8rem;
+        font-size: 1.6rem;
         line-height: 1.5em;
     }
 
@@ -1410,7 +1410,7 @@ body:not(.post-template) .post-title {
     }
 
     h6 {
-        font-size: 1.8rem;
+        font-size: 1.6rem;
     }
 
     .author-profile {
@@ -1604,11 +1604,11 @@ body:not(.post-template) .post-title {
     }
 
     h5 {
-        font-size: 1.8rem;
+        font-size: 1.6rem;
     }
 
     h6 {
-        font-size: 1.8rem;
+        font-size: 1.6rem;
     }
 
     body:not(.post-template) .post-title {
