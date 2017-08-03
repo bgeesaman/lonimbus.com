@@ -33,7 +33,7 @@ The following describes the complete baremetal provisioning process from DHCP re
 2. The DHCP server responds with an IP and subnet along with information pointing to the TFTP server and a filename of what to download/run from that TFTP server.
 3. The system attempts to connect to the TFTP server and download/run that initial file.  In the case of ```grub2```, that initial boot file runs and then also tries to contact the same TFTP server looking for a grub boot configuration.
 4. If a grub boot configuration file is found, it follows that configuration.  In the case of ```matchbox```, it should be a pointing to its web port and passing the NIC's MAC address:
-  ~~~sh
+{% highlight bash linenos %}
 set default="0"
 insmod video_bochs
 insmod video_cirrus
@@ -50,30 +50,32 @@ menuentry 'CoreOS Install' --class os {
      set root=http,deploy.lab:8080
      configfile /grub?mac=$net_default_mac
 }
-  ~~~
+{% endhighlight %}
 
+{:start="5"}
 5. Since the initial grub configuration does nothing but load an HTTP module and defer to a web address for the rest of the ```grub``` configuration, it provides a convenient way to grab a system-specific boot configuration without having to change your TFTP provided configuration file.  In this case, ```Matchbox``` answers to web requests at the ```/grub?mac=XX:XX:XX:XX:XX:XX``` URL with a tailored boot configuration, like so:
-  ~~~sh
+{% highlight console %}
 [admin@deploy ~]$ curl http://deploy.lab:8080/grub?mac=00:23:32:2f:40:3c
 default=0
 fallback=1
 timeout=1
 menuentry "CoreOS (EFI)" {
-echo "Loading kernel"
-linuxefi "/assets/coreos/1409.5.0/coreos_production_pxe.vmlinuz" coreos.config.url=http://deploy.lab:8080/ignition?mac=$net_efinet0_dhcp_mac coreos.first_boot=yes console=tty0 console=ttyS0
-echo "Loading initrd"
-initrdefi  "/assets/coreos/1409.5.0/coreos_production_pxe_image.cpio.gz"
+  echo "Loading kernel"
+  linuxefi "/assets/coreos/1409.5.0/coreos_production_pxe.vmlinuz" coreos.config.url=http://deploy.lab:8080/ignition?mac=$net_efinet0_dhcp_mac coreos.first_boot=yes console=tty0 console=ttyS0
+  echo "Loading initrd"
+  initrdefi  "/assets/coreos/1409.5.0/coreos_production_pxe_image.cpio.gz"
 }
 menuentry "CoreOS (BIOS)" {
-echo "Loading kernel"
-linux "/assets/coreos/1409.5.0/coreos_production_pxe.vmlinuz" coreos.config.url=http://deploy.lab:8080/ignition?mac=$net_efinet0_dhcp_mac coreos.first_boot=yes console=tty0 console=ttyS0
-echo "Loading initrd"
-initrd  "/assets/coreos/1409.5.0/coreos_production_pxe_image.cpio.gz"
+  echo "Loading kernel"
+  linux "/assets/coreos/1409.5.0/coreos_production_pxe.vmlinuz" coreos.config.url=http://deploy.lab:8080/ignition?mac=$net_efinet0_dhcp_mac coreos.first_boot=yes console=tty0 console=ttyS0
+  echo "Loading initrd"
+  initrd  "/assets/coreos/1409.5.0/coreos_production_pxe_image.cpio.gz"
 }
-  ~~~
+{% endhighlight %}
   
+{:start="6"}
 6. Now that grub knows what to boot, where to get it, and extra kernel parameters for the ignition configuration for what to install inside the OS and how, the system can begin and complete the installation.  Here is the ignition configuration that the CoreOS kernel pulls from the ```coreos.config.url``` URL which basically says to install CoreOS Container Linux and reboot:
-    ~~~sh
+{% highlight console %}
 [admin@deploy ~]$ curl http://deploy.lab:8080/ignition?mac=00:23:32:2f:40:3c
 {
   "ignition": {
@@ -128,19 +130,21 @@ initrd  "/assets/coreos/1409.5.0/coreos_production_pxe_image.cpio.gz"
     ]
   }
 }
-    ~~~
+{% endhighlight %}
+  
 
    * Here are the URL-decoded contents of ```/opt/installer``` from inside the ignition configuration above.  Notice how it uses the ```os=installed``` parameter to pull a "normal" boot configuration specific to this machine for future booting after being installed to disk ```/dev/sda```:
   
-      ~~~sh
-      #!/bin/bash -ex
-      curl "http://deploy.lab:8080/ignition?mac=00:23:32:2f:40:3c&os=installed" -o ignition.json
-      coreos-install -d /dev/sda -C stable -V 1409.5.0 -i ignition.json -b http://deploy.lab:8080/assets/coreos
-      udevadm settle
-      systemctl reboot
-      ~~~
+{% highlight bash linenos %}
+#!/bin/bash -ex
+curl "http://deploy.lab:8080/ignition?mac=00:23:32:2f:40:3c&os=installed" -o ignition.json
+coreos-install -d /dev/sda -C stable -V 1409.5.0 -i ignition.json -b http://deploy.lab:8080/assets/coreos
+udevadm settle
+systemctl reboot
+{% endhighlight %}
    * Also, if you notice the name of the user available via SSH during that first boot/installation is ```debug``` and uses the same SSH key as what will be available after the installation completes and is rebooted for the permanent user ```core```.  This is really handy if you are troubleshooting why the installation is failing or want to watch that process as it goes.  Note that it's really only available for a few minutes on quick systems since the installation completes so quickly.
 
+{:start="7"}
 7. At this point, CoreOS/Container Linux has been installed to ```/dev/sda```, a user named ```core``` with an SSH key set, and has an ignition configuration that configured its systemd units.  This is where Matchbox/Ignition stop and normal SSH-based administration can take over.
 
 ## Provisioning Infrastructure Configuration
@@ -152,7 +156,7 @@ There are several components that run on the ```deploy.lab``` system that all ne
 #### Setting up ```deploy.lab```
 I hand installed [Centos 7.3](https://www.centos.org) with the minimal install and ensured that it had a recent version of [Docker](https://www.docker.com) with SSH key authentication as the ```admin``` user in the ```docker``` group:
 
-~~~sh
+{% highlight console %}
 ~$ ssh deploy
 [admin@deploy ~]$ groups 
 admin wheel docker
@@ -175,22 +179,22 @@ Server:
  Built:        Thu May  4 22:06:25 2017
  OS/Arch:      linux/amd64
  Experimental: false
-~~~
+{% endhighlight %}
 
 #### Installing and Configuring the Matchbox Container on ```deploy.lab```
 The [matchbox documentation](https://coreos.com/matchbox/docs/latest/deployment.html#docker) for running via ```docker``` is a bit misleading as it actually requires several things to be completed before actually running the container. 
 
 First, create the ```matchbox``` user and create/own the ```/var/lib/matchbox``` directory where it will keep all the assets and profiles.
 
-~~~sh
+{% highlight console %}
 [admin@deploy ~]$ sudo useradd -U matchbox
 [admin@deploy ~]$ sudo mkdir -p /var/lib/matchbox/assets
 [admin@deploy ~]$ sudo chown -R matchbox:matchbox /var/lib/matchbox
-~~~
+{% endhighlight %}
 
 Download the ```matchbox``` package, verify its signature, and untar it:
 
-~~~sh
+{% highlight console %}
 [admin@deploy ~]$ wget https://github.com/coreos/matchbox/releases/download/v0.6.1/matchbox-v0.6.1-linux-amd64.tar.gz
 [admin@deploy ~]$ wget https://github.com/coreos/matchbox/releases/download/v0.6.1/matchbox-v0.6.1-linux-amd64.tar.gz.asc
 [admin@deploy ~]$ gpg --keyserver pgp.mit.edu --recv-key 18AD5014C99EF7E3BA5F6CE950BDD3E0FC8A365E
@@ -198,29 +202,29 @@ Download the ```matchbox``` package, verify its signature, and untar it:
 
 [admin@deploy ~]$ tar xzvf matchbox-v0.6.1-linux-amd64.tar.gz
 [admin@deploy ~]$ cd matchbox-v0.6.1-linux-amd64
-~~~
+{% endhighlight %}
 
 Run a script to grab the version(s) of CoreOS/Container Linux to the current directory and then copy them to the assets directory to be available via ```matchbox``` on port ```8080```:
 
-~~~sh
+{% highlight console %}
 [admin@deploy ~]$ ./scripts/get-coreos stable 1409.5.0 .
 [admin@deploy ~]$ sudo cp -r coreos /var/lib/matchbox/assets
-~~~
+{% endhighlight %}
 
 Drop out of the ```matchbox``` installation directory and run it via ```docker```:
 
-~~~sh
+{% highlight console %}
 [admin@deploy ~]$ cd ~
 [admin@deploy ~]$ docker run --net=host --rm \
     -v /var/lib/matchbox:/var/lib/matchbox:Z \
     -v /etc/matchbox:/etc/matchbox:Z,ro \
     quay.io/coreos/matchbox:latest -address=0.0.0.0:8080 \
     -rpc-address=0.0.0.0:8081 -log-level=debug
-~~~
+{% endhighlight %}
 
 Finally, verify that ```matchbox``` is running and able to serve up your downloaded CoreOS image(s).  If you see this, you should be good to go:
 
-~~~sh
+{% highlight console %}
 [admin@deploy ~]$ curl http://deploy.lab:8080/assets/coreos/1409.5.0/
 <pre>
 <a href="CoreOS_Image_Signing_Key.asc">CoreOS_Image_Signing_Key.asc</a>
@@ -231,29 +235,29 @@ Finally, verify that ```matchbox``` is running and able to serve up your downloa
 <a href="coreos_production_pxe_image.cpio.gz">coreos_production_pxe_image.cpio.gz</a>
 <a href="coreos_production_pxe_image.cpio.gz.sig">coreos_production_pxe_image.cpio.gz.sig</a>
 </pre>
-~~~
+{% endhighlight %}
 
 #### Installing and Configuring the DNSMasq (DNS, DHCP, TFTP, Grub) Container on ```deploy.lab```
 
 It's easiest to grab a copy of the repo and build your own docker image locally.
 
-~~~sh
+{% highlight console %}
 [admin@deploy ~]$ git clone https://github.com/bgeesaman/maas
 [admin@deploy ~]$ cd maas
-~~~
+{% endhighlight %}
 
 Edit the files in ```files``` directory as needed.  Most changes are IP addresses, MAC addresses, and hostnames for your environment:
 
-~~~sh
+{% highlight console %}
 [admin@deploy maas]$ vi files/dnsmasq.conf
 [admin@deploy maas]$ vi files/grub/*
-~~~
+{% endhighlight %}
 
 Finally, build and run the image:
 
-~~~sh
+{% highlight console %}
 [admin@deploy maas]$ ./buildandrun.sh
-~~~
+{% endhighlight %}
 
 #### Running the Tectonic Installer
 With the above in place and a free license from CoreOS for Tectonic, you can now follow the [Tectonic Baremetal with Graphical Installer guide](https://coreos.com/tectonic/docs/latest/install/bare-metal/index.html) having satisfied the pre-requisites--with one exception.
@@ -262,7 +266,7 @@ With the above in place and a free license from CoreOS for Tectonic, you can now
  
    The Tectonic installer will run you through several steps of supplying configuration and will arrive at a point where it instructs you to "power on your systems" that are to be baremetal booted from the network, but it won't work out-of-the-box.  The details are in [this github issue](https://github.com/coreos/tectonic-installer/issues/1317) for what is happening to prevent ```grub``` from working by default.  The good news is that there is a simple workaround.  On the ```deploy.lab``` system, this is the default profile that the Tectonic GUI installer places into your ```/var/lib/matchbox/profiles``` folder:
 
-   ~~~sh
+{% highlight console %}
 [admin@deploy ~]$ cat /var/lib/matchbox/profiles/coreos-install.json 
 {
 	"id": "coreos-install",
@@ -280,9 +284,9 @@ With the above in place and a free license from CoreOS for Tectonic, you can now
 		]
 	}
 }
-   ~~~
+{% endhighlight %}
    Notice the ```args``` section.  When the system is booting from the network and pulls the ```/grub?mac=XX:XX:XX:XX:XX:XX``` configuration, this ```args``` list is directly dropped into the kernel line.  However, the ```uuid``` and ```mac:hexhyp``` variables are ```ipxe``` boot environment specific.  For ```grub2```, it actually varies slightly.  To fix this, we need to make some customizations to the ```matchbox``` ```groups``` configuration files.  I chose to make one for each system based on the ```mac``` address selector.  Notice that I now reference the ```coreos-install-mp``` or ```coreos-install-smpc``` profiles:
-   ~~~sh
+{% highlight console %}
 [admin@deploy ~]$ cat /var/lib/matchbox/groups/coreos-install-mp.json 
 {
 	"id": "coreos-install-mp",
@@ -313,9 +317,9 @@ With the above in place and a free license from CoreOS for Tectonic, you can now
 		"ssh_authorized_key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQCugz/eu/a6U5ZXtYVp9ufCghVSP0Lux/nP6BgbranKE6r3h3xgqo8yR2LUG9VwH6Vo+BtGgToeww+jbgr3oq9g8/mQmNvQEefvWyzhYxrpv6q36fdYS0KhQxA6vnpOZZ1M9cZ1q6iPaUryxDUFU3HULDKM4g/6XBzqBJZ2illyuw=="
 	}
 }
-   ~~~
+{% endhighlight %}
    We also need to make those renamed profiles.  Notice the variable ```$net_efinet0_dhcp_mac``` for UEFI/Mac hardware and the ```$net_default_mac``` variable for BIOS booting hardware.  Also notice that I made another unique ignition template to install to ```/dev/sdb``` instead of ```/dev/sda``` for the ```smpc.lab``` system:
-   ~~~sh
+{% highlight bash %}
 [admin@deploy ~]$ cat /var/lib/matchbox/profiles/coreos-install-mp.json 
 {
 	"id": "coreos-install",
@@ -350,7 +354,7 @@ With the above in place and a free license from CoreOS for Tectonic, you can now
 		]
 	}
 }
-   ~~~
+{% endhighlight %}
    Once the above changes have been made, you should be able to successfully PXE/Netboot the systems and continue on with the final portion of the Tectonic installer.  If you run into issues, double-check your formatting of the profiles and groups as well as hitting the ```/grub``` and ```/ignition``` endpoints with the proper parameters to see what configurations are being provided to your systems.
 
 Congratulations!  You should now be able to hit the web UI of the Tectonic Console, use ```kubectl```, and ```ssh``` into the systems using the ```core``` user and the SSH key you supplied.  I hope this helps you understand what's going on behind a fairly sophisticated and easily customizable baremetal Container Linux and Kubernetes installation system.

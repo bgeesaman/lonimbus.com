@@ -323,7 +323,9 @@ blockquote cite a { font-weight: normal; }
 mark {
     background-color: #FFC336;
 }
-
+span.lineno {
+    color: #555555;
+}
 code, tt {
     padding: 0px;
     font-family: monospace, sans-serif;
